@@ -50,6 +50,8 @@ export function init(context: vscode.ExtensionContext) {
   );
 
   registerFigSupport()
+
+  vscode.window.onDidChangeActiveTextEditor(() => registerFigSupport())
 }
 
 function getSupportedDocumentAst(document: vscode.TextDocument) {
@@ -57,9 +59,15 @@ function getSupportedDocumentAst(document: vscode.TextDocument) {
   return simpleYamlParse(document)
 }
 
+let figSupportRegistered = false
 async function registerFigSupport() {
+  // register support lazily
+  const { activeTextEditor } = vscode.window
+  if (!activeTextEditor || !vscode.languages.match(WorkflowSelector, activeTextEditor.document)) return
   const figExtension = vscode.extensions.getExtension('undefined_publisher.fig-unreleased')
   if (!figExtension) return
+  if (figSupportRegistered) return
+  figSupportRegistered = true
   const api = await figExtension.activate()
 
   const enablePath = ['jobs', '*', 'steps', 'run']
